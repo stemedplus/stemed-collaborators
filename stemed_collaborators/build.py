@@ -3,6 +3,9 @@
     python -m stemed_collaborators --refresh [--force]   read Commons, update data/collaborators.json
     python -m stemed_collaborators --out output           write the page from the saved copy
 
+The saved copy, data/collaborators.json, is not in the repository: the workflow keeps the last good copy in
+the GitHub Actions cache. Without it the page still builds, with no people cards.
+
 The page is one file, index.html, with the cards built in, so it also opens straight from a download.
 """
 import argparse

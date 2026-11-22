@@ -128,7 +128,30 @@ class Refresh(unittest.TestCase):
         self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 2)
 
 
+    def test_empty_cache_first_run_writes_cards(self):
+        # The workflow keeps the last good copy in the Actions cache; on a first run there is none.
+        self.assertFalse(self.tmp.exists())
+        changed, msg = self.run_refresh()
+        self.assertTrue(changed, msg)
+        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 2)
+
+    def test_empty_cache_and_commons_down_writes_nothing(self):
+        def broken():
+            raise RuntimeError("member directory answered 503")
+        changed, _ = directory.refresh(self.tmp, config(), list_members=broken, read=read)
+        self.assertFalse(changed)
+        self.assertFalse(self.tmp.exists())
+
+
 class Page(unittest.TestCase):
+    def test_build_without_saved_cards(self):
+        # Empty Actions cache and Commons down: the page still builds, with no people cards.
+        missing = Path(tempfile.mkdtemp()) / "data" / "collaborators.json"
+        out = Path(tempfile.mkdtemp())
+        payload = build.build(out, config(), directory.load_data(missing))
+        self.assertEqual(payload["people"], [])
+        self.assertNotIn(build.MARK, (out / "index.html").read_text())
+
     def test_build_puts_cards_in_the_page(self):
         cards, counts = directory.collect(["ana", "ben.k"], config(), read)
         out = Path(tempfile.mkdtemp())

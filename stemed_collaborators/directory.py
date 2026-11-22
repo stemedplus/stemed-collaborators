@@ -1,6 +1,6 @@
 """Turn STEMEd+ Commons profiles into the cards on the Find Collaborators page.
 
-    python -m stemed_collaborators --refresh      read Commons and update data/collaborators.json
+    python -m stemed_collaborators --refresh      read Commons and update data/collaborators.json (not in Git)
 
 Who gets a card (config/site.json, "listing"):
   * The member is in the STEMEd+ member directory (which decides membership) and their profile has at least one academic interest
@@ -12,8 +12,11 @@ Who gets a card (config/site.json, "listing"):
 
 Only public profile fields are kept: name, username, institution, ORCID iD, photo, and interests.
 
-The last good copy stays in data/collaborators.json. A refresh replaces it only when Commons answered for
-most members, so a Commons outage never empties the page.
+data/collaborators.json holds people's profile details, so it is never committed (it is in .gitignore). The
+daily workflow keeps the last good copy in the GitHub Actions cache, not in the repository: it restores the
+newest copy before a refresh and saves the result after. A refresh replaces it only when Commons answered for
+most members, so a Commons outage never empties the page. With no saved copy (an empty cache, or a fresh
+checkout), the refresh starts from nothing.
 """
 import datetime as dt
 import json

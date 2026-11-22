@@ -1,7 +1,8 @@
 name: Update and publish
 
-# Every day: read STEMEd+ Commons profiles, save the cards in data/collaborators.json (only when something
-# changed, and never replacing a good copy with a broken read), and build the page.
+# Every day: read STEMEd+ Commons profiles into data/collaborators.json (never replacing a good copy with a
+# broken read) and build the page. The cards hold people's profile details, so they are never committed: the
+# last good copy lives in the GitHub Actions cache (keys "collaborators-data-<run id>"; the newest is restored).
 #
 # The page is published to GitHub Pages while config/site.json has "publish": true. Set it to false to stop
 # publishing; each run also keeps the page as a download (Artifacts: "find-collaborators-page").
@@ -22,7 +23,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     outputs:
       preview: ${{ steps.mode.outputs.preview }}
     steps:
@@ -32,19 +33,21 @@ jobs:
           python-version: "3.12"
       - name: Run tests
         run: python -m unittest discover -s tests -t . -v
+      - name: Restore the last good copy of the cards
+        uses: actions/cache/restore@v5
+        with:
+          path: data/collaborators.json
+          key: collaborators-data-${{ github.run_id }}
+          restore-keys: collaborators-data-
       - name: Read STEMEd+ Commons profiles
         if: github.event_name != 'pull_request'
         run: python -m stemed_collaborators --refresh
-      - name: Save the cards if they changed
-        if: github.event_name != 'pull_request'
-        run: |
-          if [ -n "$(git status --porcelain data)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-            git add data
-            git commit -m "Update cards from STEMEd+ Commons profiles"
-            git push
-          fi
+      - name: Keep the cards as the last good copy
+        if: github.event_name != 'pull_request' && hashFiles('data/collaborators.json') != ''
+        uses: actions/cache/save@v5
+        with:
+          path: data/collaborators.json
+          key: collaborators-data-${{ github.run_id }}
       - name: Refresh the shared STEMEd+ look
         continue-on-error: true
         run: |

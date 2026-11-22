@@ -41,10 +41,23 @@ member removes their academic interests, or a maintainer adds their username to 
 
 ## Publishing
 
-`.github/workflows/update.yml` runs daily, on every push to `main`, and from the Actions tab. It saves the
-cards in `data/collaborators.json` when they change, builds the page, and publishes it to GitHub Pages while
-`publish` in `config/site.json` is `true`. Turn on once: **Settings → Pages → Source: GitHub Actions**. On a free GitHub
+`.github/workflows/update.yml` runs daily, on every push to `main`, and from the Actions tab. It refreshes the
+cards in `data/collaborators.json`, builds the page, and publishes it to GitHub Pages while
+`publish` in `config/site.json` is `true`. The workflow only reads the repository (`contents: read`); it never
+commits. Turn on once: **Settings → Pages → Source: GitHub Actions**. On a free GitHub
 account, Pages needs the repository to be public.
+
+## Where the cards are kept
+
+The cards hold copies of people's public profile details, so they are **not kept in the repository**:
+`data/collaborators.json` is in `.gitignore`, and someone who leaves or edits their profile drops out of the
+next build without staying in the Git history. The last good copy lives in the **GitHub Actions cache**
+instead. Each run restores the newest entry whose key starts with `collaborators-data-`, refreshes it from
+Commons, and saves the result as `collaborators-data-<run id>`. Older entries go unused and GitHub removes
+them after 7 days. They can be seen and deleted under **Actions → Caches**.
+
+If the cache is empty (the first run, or after the entries are deleted), the run starts from nothing and
+builds the cards from Commons; the page still builds if Commons is down, just without people cards.
 
 ## When Commons doesn't answer
 
@@ -60,5 +73,6 @@ is real, run `python -m stemed_collaborators --refresh --force` once.
 - `stemed_collaborators/build.py`: builds `index.html` with the cards built in.
 - `site/index.html`: the page (search, cards, invitation). The green band and footer come from
   [stemedplus-theme](https://github.com/stemedplus/stemedplus-theme); don't edit them here.
-- `data/collaborators.json`: the saved cards.
+- `data/collaborators.json`: the saved cards, made by `--refresh`. Not committed; the workflow keeps it in
+  the Actions cache.
 - `tests/`: `python -m unittest discover -s tests -t .`
