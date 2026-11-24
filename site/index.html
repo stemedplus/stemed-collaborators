@@ -67,6 +67,12 @@
   .orgs-add .opt { color: var(--muted); }
   .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .lead { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  .sect { display: flex; flex-direction: column; gap: 6px; }
+  .sect-h { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--green); }
+  .sect-h.need { color: #8a3a1f; }
+  .tag.offer { background: #ffffff; border: 1.5px solid var(--green); color: var(--green); }
+  .tag.need { background: #ffffff; border: 1.5px dashed #c98a72; color: #7a3216; }
+  .tag.need:hover, .tag.need.hit { background: #7a3216; border-color: #7a3216; color: #ffffff; }
   .noints { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); background: var(--pale); border-radius: 10px; padding: 10px 12px; }
   .noints a { font-weight: 800; }
   .empty { border: 2px dashed #9cc09c; border-radius: 16px; padding: 24px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
@@ -92,6 +98,7 @@
         <li><strong>New to STEMEd+?</strong> <a id="join-link" href="https://stemedplus.org/join-stemed/">Join STEMEd+</a> first. Sign in through your institution, ORCID, or another provider.</li>
         <li>Sign in and open your profile. Choose <strong>Edit profile</strong>.</li>
         <li>Add <strong>Academic interests</strong>: your topics, plus skills and methods.<br><span class="eg">For example: "science identity", "qualitative interviews", "psychometrics", "teacher professional learning".</span></li>
+        <li>Say what you can offer and what you need: add interests that start with <strong>Offer:</strong> or <strong>Need:</strong>.<br><span class="eg">For example: "Offer: qualitative coding", "Offer: K-12 classroom access", "Need: psychometrics help". They show on your card as "I can offer" and "I'm looking for".</span></li>
         <li>Add a way to reach you, such as your website, email, or Mastodon, so people who find you can get in touch.</li>
         <li class="optin-step" hidden>Add the interest <strong class="optin-name"></strong> so you're listed here.</li>
         <li>Save. Your interests appear on your card within a day.</li>
@@ -112,6 +119,8 @@
     <button type="button" data-show="all" aria-pressed="true">Everyone</button>
     <button type="button" data-show="people" aria-pressed="false">People</button>
     <button type="button" data-show="orgs" aria-pressed="false">Organizations</button>
+    <button type="button" data-show="offer" aria-pressed="false">Offering</button>
+    <button type="button" data-show="need" aria-pressed="false">Looking for</button>
   </div>
   <div class="orgs-add" id="orgs-add" hidden>
     <div>
@@ -125,6 +134,10 @@
       </ul>
     </div>
     <a class="btn rust" id="orgs-add-link" href="https://stemedplus.org/contact-us/" target="_blank" rel="noopener noreferrer">Add your organization<span class="vh"> (opens in a new tab)</span></a>
+  </div>
+  <div class="orgs-add" id="offer-tip" hidden>
+    <div><p><strong>Add yours.</strong> On your STEMEd+ Commons profile, add academic interests that start with <strong>Offer:</strong> or <strong>Need:</strong>, for example "Offer: qualitative coding" or "Need: K-12 partner schools". They appear here within a day.</p></div>
+    <a class="btn rust" id="offer-tip-link" href="https://stemedplus.profile.hcommons.org/edit-profile/" target="_blank" rel="noopener noreferrer">Edit my profile<span class="vh"> (opens in a new tab)</span></a>
   </div>
   <div class="popular" id="popular" aria-label="Popular interests"></div>
   <p class="count" id="count" aria-live="polite"></p>
@@ -171,7 +184,10 @@ var DATA = /*__DATA__*/null;
   people.forEach(function (p) {
     p._name = norm(p.name + ' ' + p.username);
     p._inst = norm(p.institution);
-    p._ints = p.interests.map(norm);
+    p.offers = p.offers || []; p.needs = p.needs || [];
+    // Interests first, then offers and needs, so search finds all three; p._ints[k] still matches p.interests[k].
+    p._ints = p.interests.concat(p.offers, p.needs).map(norm);
+    p._any = p.interests.length + p.offers.length + p.needs.length > 0;
   });
 
   // Popular interests: the most common, shown as one-click searches.
@@ -244,7 +260,22 @@ var DATA = /*__DATA__*/null;
       tags.appendChild(m);
     }
     if (order.length) c.appendChild(tags);
-    else {
+    [['offers', 'offer', 'I can offer'], ['needs', 'need', "I'm looking for"]].forEach(function (s) {
+      var items = p[s[0]];
+      if (!items.length) return;
+      var box = el('div', { 'class': 'sect' });
+      box.appendChild(el('p', { 'class': 'sect-h' + (s[1] === 'need' ? ' need' : '') }, s[2]));
+      var row = el('div', { 'class': 'tags' });
+      items.forEach(function (i) {
+        var n = norm(i), hit = words.length && words.every(function (w) { return n.indexOf(w) > -1; });
+        var b = el('button', { 'class': 'tag ' + s[1] + (hit ? ' hit' : ''), type: 'button', title: 'Find everyone who mentions ' + i }, i);
+        b.addEventListener('click', function () { setQuery(i); });
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+      c.appendChild(box);
+    });
+    if (!p._any) {
       var ni = el('p', { 'class': 'noints' }, 'No interests on this profile yet. Is this you? ');
       ni.appendChild(el('a', { href: D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/' }, 'Add your interests →'));
       c.appendChild(ni);
@@ -264,18 +295,23 @@ var DATA = /*__DATA__*/null;
     var raw = q.value.trim(), phrase = norm(raw), words = phrase ? phrase.split(' ') : [];
     $('clear').hidden = !raw;
     $('orgs-add').hidden = show !== 'orgs';
-    var pool = (show === 'people' ? [] : orgs).concat(show === 'orgs' ? [] : people);
+    $('offer-tip').hidden = show !== 'offer' && show !== 'need';
+    var pool = show === 'offer' ? people.filter(function (p) { return p.offers.length; })
+             : show === 'need' ? people.filter(function (p) { return p.needs.length; })
+             : (show === 'people' ? [] : orgs).concat(show === 'orgs' ? [] : people);
     var list = pool.map(function (p) { return { p: p, s: score(p, words, phrase) }; }).filter(function (x) { return x.s > 0; });
     // Organizations first, then people; with a search, best matches first within each. People who have added
     // interests come before people who haven't yet.
-    list.sort(function (a, b) { return ((b.p.kind === 'org') - (a.p.kind === 'org')) || (words.length ? b.s - a.s : 0) || ((b.p.interests.length > 0) - (a.p.interests.length > 0)) || a.p.name.localeCompare(b.p.name); });
+    list.sort(function (a, b) { return ((b.p.kind === 'org') - (a.p.kind === 'org')) || (words.length ? b.s - a.s : 0) || (!!b.p._any - !!a.p._any) || a.p.name.localeCompare(b.p.name); });
     grid.innerHTML = '';
     var frag = document.createDocumentFragment();
     list.forEach(function (x) { frag.appendChild(card(x.p, phrase, words)); });
     grid.appendChild(frag);
     if (!pool.length) {
       count.textContent = '';
-      grid.appendChild(el('div', { 'class': 'empty' }, 'No one is listed yet. Add your interests to your STEMEd+ Commons profile to be the first.'));
+      grid.appendChild(el('div', { 'class': 'empty' }, show === 'offer' ? 'No one has added an "Offer:" interest yet. Add one to your profile and be the first.'
+        : show === 'need' ? 'No one has added a "Need:" interest yet. Add one to your profile and be the first.'
+        : 'No one is listed yet. Add your interests to your STEMEd+ Commons profile to be the first.'));
     } else if (!list.length) {
       count.textContent = '';
       var e = el('div', { 'class': 'empty' }); e.appendChild(document.createTextNode('No one matches "' + raw + '" yet. Try a broader word, or browse '));
@@ -287,7 +323,7 @@ var DATA = /*__DATA__*/null;
       if (np) parts.push(np + (np === 1 ? ' person' : ' people'));
       if (no) parts.push(no + (no === 1 ? ' organization' : ' organizations'));
       count.appendChild(el('strong', null, parts.join(' and ')));
-      count.appendChild(document.createTextNode(words.length ? ' matching "' + raw + '"' : ' open to collaboration'));
+      count.appendChild(document.createTextNode(words.length ? ' matching "' + raw + '"' : show === 'offer' ? ' offering expertise' : show === 'need' ? ' looking for expertise' : ' open to collaboration'));
     }
   }
   var timer;
@@ -301,6 +337,7 @@ var DATA = /*__DATA__*/null;
       render();
     });
   });
+  if (D.edit_profile) $('offer-tip-link').href = D.edit_profile;
   if (D.contact_url) { $('org-contact').href = D.contact_url; $('orgs-add-link').href = D.contact_url; }
   var m = location.hash.match(/^#q=(.*)$/); if (m) q.value = decodeURIComponent(m[1]);
   render();

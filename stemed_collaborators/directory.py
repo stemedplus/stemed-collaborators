@@ -63,6 +63,27 @@ def why_not(username: str, data: dict, config: dict) -> Optional[str]:
     return None
 
 
+# Members can add "Offer: ..." and "Need: ..." as academic interests. A few common spellings count; a colon (or a
+# spaced dash) must follow the word, so ordinary interests such as "Needs assessment" are left alone.
+OFFER = re.compile(r"^\s*(?:i\s+can\s+offer|can\s+offer|i\s+offer|what\s+i\s+offer|offering|offers?)\s*(?::|\s[-–—])\s*(.+)$", re.I)
+NEED = re.compile(r"^\s*(?:i\s+need|what\s+i\s+need|needs?|needed|seeking|seek|looking\s+for|wanted)\s*(?::|\s[-–—])\s*(.+)$", re.I)
+
+
+def split_interests(items: List[str]) -> Tuple[List[str], List[str], List[str]]:
+    """(plain interests, offers, needs), with the "Offer:" or "Need:" prefix taken off."""
+    plain, offers, needs = [], [], []
+    for item in items:
+        m = OFFER.match(item)
+        n = None if m else NEED.match(item)
+        if m and m.group(1).strip():
+            offers.append(m.group(1).strip())
+        elif n and n.group(1).strip():
+            needs.append(n.group(1).strip())
+        else:
+            plain.append(item)
+    return plain, offers, needs
+
+
 def to_card(username: str, data: dict, config: dict) -> Optional[dict]:
     """The card for one profile, or None when it should not be shown."""
     if why_not(username, data, config):
@@ -70,7 +91,7 @@ def to_card(username: str, data: dict, config: dict) -> Optional[dict]:
     _, opt_in, _ = listing_rules(config)
     all_interests = commons.interests(data)
     opted_in = any(same(i, opt_in) for i in all_interests)
-    shown = [i for i in all_interests if not same(i, opt_in)]
+    shown, offers, needs = split_interests([i for i in all_interests if not same(i, opt_in)])
     name = re.sub(r"\s+", " ", str(data.get("name") or "")).strip() or username
     photo = str(data.get("avatar") or "").strip()
     orcid = str(data.get("orcid") or "").strip()
@@ -81,6 +102,8 @@ def to_card(username: str, data: dict, config: dict) -> Optional[dict]:
         "orcid": orcid if re.fullmatch(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]", orcid) else "",
         "photo": photo if PHOTO.match(photo) and "mystery" not in photo else "",
         "interests": shown,
+        "offers": offers,
+        "needs": needs,
         "opted_in": opted_in,
         "profile": commons.profile_url(username),
     }
@@ -111,7 +134,9 @@ def collect(members: Iterable[dict], config: dict, read: Callable = commons.iter
             unanswered += 1
             record["avatar"] = old_photos.get(username.lower(), "")
         cards.append(to_card(username, record, config))
-    counts["no_interests"] = sum(1 for c in cards if not c["interests"])
+    counts["no_interests"] = sum(1 for c in cards if not (c["interests"] or c["offers"] or c["needs"]))
+    counts["offering"] = sum(1 for c in cards if c["offers"])
+    counts["looking"] = sum(1 for c in cards if c["needs"])
     if unanswered:
         counts["photo_not_read"] = unanswered
     cards.sort(key=lambda c: (c["name"].lower(), c["username"]))

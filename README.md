@@ -15,11 +15,17 @@ updates itself every day.
    (`/api/v1/members/<username>/`) for the photo.
 3. **Who gets a card.** Every STEMEd+ member. Cards are sorted with people who have added academic interests
    first; a card without interests shows "Is this you? Add your interests", linking to **Edit profile**.
-4. **Search.** The page searches interests, skills, names, and institutions. Clicking an interest shows
+4. **What people offer and need.** Members can add academic interests that start with `Offer:` or `Need:`
+   (for example "Offer: qualitative coding", "Need: K-12 partner schools"). The card shows them under
+   "I can offer" and "I'm looking for", without the prefix, and the Offering and Looking for buttons show
+   only those people. A few spellings count ("Offering:", "Can offer:", "Seeking:", "Looking for:", any
+   capitals, or a spaced dash in place of the colon); ordinary interests such as "Needs assessment" are left
+   alone. The page's "Help people find you" box asks people to add them.
+5. **Search.** The page searches interests, skills, names, and institutions. Clicking an interest shows
    everyone else with it, and the most common interests are listed as one-click searches.
-5. **Adding interests.** The page invites people to sign in, open **Edit profile**, and add academic
+6. **Adding interests.** The page invites people to sign in, open **Edit profile**, and add academic
    interests, including their skills and methods. They appear on their card at the next daily update.
-6. **Contact.** Each card links to the person's profile, where they list the ways to reach them. (Knowledge
+7. **Contact.** Each card links to the person's profile, where they list the ways to reach them. (Knowledge
    Commons no longer has direct messages.)
 
 Only public profile fields are used. Nothing is collected from people directly.
