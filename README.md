@@ -26,10 +26,10 @@ Only public profile fields are used. Nothing is collected from people directly.
 
 ## Organizations (config/organizations.json)
 
-Organizations open to collaboration get their own cards, shown first and marked "Organization": a summary,
+Organizations open to collaboration get their own cards, shown first and marked "Organization": the lead's name, a summary,
 what they are looking for, searchable interest tags, a "Contact to collaborate" link, and their website.
 Organizations ask to be added through the [STEMEd+ contact page](https://stemedplus.org/contact-us/), which the
-page links to; a maintainer then adds an entry. Required: `name`, `summary`, `contact` (https). A `logo` is a
+page links to; choosing **Organizations** on the page shows an "Add your organization" button with the list of what to send. A maintainer then adds an entry. Required: `name`, `summary`, `contact` (https); `lead` is shown when given. A `logo` is a
 file in `site/` or an https address. The page has an Everyone / People / Organizations switch.
 
 ## Who is listed (config/site.json)

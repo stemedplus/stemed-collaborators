@@ -201,3 +201,13 @@ class Organizations(unittest.TestCase):
         path.write_text(json.dumps({"organizations": [{"name": "X", "summary": "s", "contact": "mailto:a@b.org"}]}))
         with self.assertRaises(SystemExit):
             build.load_organizations(path)
+
+
+class OrganizationLead(unittest.TestCase):
+    def test_lead_is_optional_and_kept(self):
+        path = Path(tempfile.mkdtemp()) / "orgs.json"
+        path.write_text(json.dumps({"organizations": [
+            {"name": "X", "lead": " Pat Lee ", "summary": "s", "contact": "https://x.org/"},
+            {"name": "Y", "summary": "s", "contact": "https://y.org/"}]}))
+        orgs = build.load_organizations(path)
+        self.assertEqual([o["lead"] for o in orgs], ["Pat Lee", ""])

@@ -1,5 +1,5 @@
 {
-  "_help": "Organizations open to collaboration, shown as cards on Find Collaborators next to people. Organizations ask to be added through https://stemedplus.org/contact-us/. Required: name, summary, contact. logo: a file in site/ or an https address; leave it out to show initials. interests: short tags people can search and click.",
+  "_help": "Organizations open to collaboration, shown as cards on Find Collaborators next to people. Organizations ask to be added through https://stemedplus.org/contact-us/. Required: name, summary, contact. lead: the lead person's name, shown under the name (the page asks organizations for it). logo: a file in site/ or an https address; leave it out to show initials. interests: short tags people can search and click.",
   "organizations": [
     {
       "name": "STEMEd+ Commons",
