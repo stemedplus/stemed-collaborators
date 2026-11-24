@@ -7,6 +7,6 @@
     "opt_in_required": false,
     "opt_in_interest": "open to collaboration",
     "exclude": [],
-    "_help": "Everyone in the STEMEd+ member directory with academic interests on their profile gets a card: the cards show only public profile fields; people get in touch through the contact links on each profile. Set opt_in_required to true only if you ever want to list just members whose interests include opt_in_interest. Add usernames to exclude for anyone who asks to be left out."
+    "_help": "Everyone in the STEMEd+ members list (Profiles API) with academic interests on their profile gets a card: the cards show only public profile fields; people get in touch through the contact links on each profile. Set opt_in_required to true only if you ever want to list just members whose interests include opt_in_interest. Add usernames to exclude for anyone who asks to be left out."
   }
 }

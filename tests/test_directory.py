@@ -5,15 +5,6 @@ from pathlib import Path
 
 from stemed_collaborators import build, commons, directory
 
-PAGE1 = """<div class="member-grid">
-<div class="member-card"><p class="name"><a href="/members/ana/" class="member-card-link">Ana</a></p></div>
-<div class="member-card"><p class="name"><a href="https://stemedplus.profile.hcommons.org/members/ben.k/" class="member-card-link">Ben</a></p></div>
-<div class="member-card"><p class="name"><a href="/members/cy/" class="member-card-link">Cy</a></p></div>
-<div class="member-card"><p class="name"><a href="/members/eve%40example.org/" class="member-card-link">Eve</a></p></div>
-</div><span class="member-count">5 members</span><a href="?per_page=96&amp;cursor=abc%3D">Next >></a>"""
-PAGE2 = """<div class="member-card"><a href="/members/dee/" class="member-card-link">Dee</a></div>
-<div class="member-card"><a href="/members/ana/" class="member-card-link">Ana</a></div>"""
-
 PROFILES = {
     "ana": {"username": "ana", "name": "Ana  Ruiz", "institutional_affiliation": "State U", "orcid": "0000-0001-2345-678X",
             "avatar": "https://hcommons.org/avatars/ana.jpg",
@@ -22,18 +13,39 @@ PROFILES = {
     "ben.k": {"username": "ben.k", "name": "Ben K", "academic_interests": [{"id": 4, "text": "psychometrics"}]},
     "cy": {"username": "cy", "name": "Cy", "academic_interests": []},
     "dee": {"username": "dee", "name": "Dee", "academic_interests": [{"id": 5, "text": "open to collaboration"}]},
+    "eve@example.org": {"username": "eve@example.org", "name": "Eve", "academic_interests": []},
 }
 
 
+def listed(name):
+    """A members-list record: the profile without its photo, as the list API returns it."""
+    record = {k: v for k, v in PROFILES[name].items() if k != "avatar"}
+    record["url"] = "http://stemedplus.profile.hcommons.org/api/v1/members/" + name + "/"
+    return record
+
+
+NEXT = "http://stemedplus.profile.hcommons.org/api/v1/members/?cursor=cD01OTA1MA%3D%3D"
+LIST1 = {"next": NEXT, "previous": None, "results": [listed("ana"), listed("ben.k"), listed("cy")]}
+LIST2 = {"next": None, "previous": commons.MEMBERS, "results": [listed("eve@example.org"), listed("dee"), listed("ana")]}
+
+
 def fake_get(url, accept="application/json", timeout=20):
-    if "/api/v1/members/" in url:
-        name = url.rstrip("/").split("/")[-1]
-        return (200, json.dumps(PROFILES[name])) if name in PROFILES else (404, "")
-    return (200, PAGE2) if "cursor=" in url else (200, PAGE1)
+    if url == commons.MEMBERS:
+        return 200, json.dumps(LIST1)
+    if url == "https://stemedplus.profile.hcommons.org/api/v1/members/?cursor=cD01OTA1MA%3D%3D":
+        return 200, json.dumps(LIST2)
+    if url.startswith("http://"):
+        raise AssertionError("asked for an http:// address: " + url)
+    name = commons.urllib.parse.unquote(url.rstrip("/").split("/")[-1])
+    return (200, json.dumps(PROFILES[name])) if name in PROFILES else (404, "")
 
 
 def read(names):
     return commons.iter_profiles(names, get=fake_get, workers=2)
+
+
+def members(*names):
+    return [listed(n) for n in names]
 
 
 def config(required=False, exclude=()):
@@ -41,52 +53,54 @@ def config(required=False, exclude=()):
             "listing": {"opt_in_required": required, "opt_in_interest": "open to collaboration", "exclude": list(exclude)}}
 
 
-class Directory(unittest.TestCase):
-    def test_reads_every_page_once(self):
-        names = commons.directory_usernames(get=fake_get, pause=0)
-        self.assertEqual(names, ["ana", "ben.k", "cy", "eve@example.org", "dee"])
-        self.assertEqual(commons.directory_usernames.total, 5)
+class MembersList(unittest.TestCase):
+    def test_reads_every_page_on_https_once_per_member(self):
+        found = commons.list_members(get=fake_get, pause=0)
+        self.assertEqual([m["username"] for m in found], ["ana", "ben.k", "cy", "eve@example.org", "dee"])
 
     def test_unusual_usernames_are_quoted(self):
         self.assertEqual(commons.profile_url("eve@example.org"),
                          "https://stemedplus.profile.hcommons.org/members/eve%40example.org/")
 
-    def test_next_link_resolves_relative_cursor(self):
-        self.assertEqual(commons.next_page(PAGE1, commons.DIRECTORY),
-                         "https://stemedplus.profile.hcommons.org/members/?per_page=96&cursor=abc%3D")
-
-    def test_empty_directory_is_an_error(self):
-        with self.assertRaises(RuntimeError):
-            commons.directory_usernames(get=lambda u, accept=None: (200, "<p>nothing</p>"), pause=0)
-
-
-class BackwardPaging(unittest.TestCase):
-    def test_members_skipped_going_forward_are_found_going_back(self):
-        pages = {
-            "first": '<a href="/members/a/" class="member-card-link">A</a><span class="member-count">3 members</span>'
-                     '<a href="?per_page=96&amp;cursor=x">Next >></a>',
-            "last": '<a href="/members/c/" class="member-card-link">C</a><a href="?per_page=96&amp;cursor=y&amp;dir=prev"><< Previous</a>',
-            "back": '<a href="/members/b/" class="member-card-link">B</a><a href="/members/a/" class="member-card-link">A</a>',
-        }
+    def test_a_failed_page_is_an_error_not_a_short_list(self):
         def get(url, accept=None):
-            return 200, pages["back" if "dir=prev" in url else "last" if "cursor=x" in url else "first"]
-        self.assertEqual(sorted(commons.directory_usernames(get=get, pause=0)), ["a", "b", "c"])
+            return (200, json.dumps(LIST1)) if url == commons.MEMBERS else (503, "")
+        with self.assertRaises(RuntimeError):
+            commons.list_members(get=get, pause=0)
+
+    def test_repeating_next_link_is_an_error(self):
+        loop = {"next": commons.MEMBERS, "results": [listed("ana")]}
+        with self.assertRaises(RuntimeError):
+            commons.list_members(get=lambda u, accept=None: (200, json.dumps(loop)), pause=0)
+
+    def test_empty_or_changed_list_is_an_error(self):
+        for body in ({"next": None, "results": []}, {"detail": "Authentication credentials were not provided."}):
+            with self.assertRaises(RuntimeError):
+                commons.list_members(get=lambda u, accept=None, b=body: (200, json.dumps(b)), pause=0)
 
 
 class Cards(unittest.TestCase):
     def names(self, cfg):
-        cards, counts = directory.collect(["ana", "ben.k", "cy", "dee", "nobody"], cfg, read)
+        cards, counts = directory.collect(members("ana", "ben.k", "cy", "dee"), cfg, read)
         return [c["username"] for c in cards], cards, counts
 
     def test_preview_lists_everyone_with_interests(self):
         names, cards, counts = self.names(config())
         self.assertEqual(names, ["ana", "ben.k"])          # cy has none; dee has only the opt-in interest
-        self.assertEqual(counts["missing"], 1)
+        self.assertEqual((counts["members"], counts["listed"], counts["no_interests"]), (4, 2, 2))
         ana = cards[0]
         self.assertEqual(ana["interests"], ["Science identity", "qualitative interviews"])   # opt-in tag hidden
         self.assertEqual(ana["name"], "Ana Ruiz")
         self.assertTrue(ana["opted_in"])
         self.assertEqual(ana["orcid"], "0000-0001-2345-678X")
+        self.assertEqual(ana["photo"], "https://hcommons.org/avatars/ana.jpg")   # from her own profile
+
+    def test_photo_kept_from_last_copy_when_profile_does_not_answer(self):
+        down = lambda names: ((n, commons.UNAVAILABLE, None) for n in names)
+        cards, counts = directory.collect(members("ana", "ben.k"), config(), down,
+                                          {"ana": "https://hcommons.org/avatars/ana-old.jpg"})
+        self.assertEqual([c["photo"] for c in cards], ["https://hcommons.org/avatars/ana-old.jpg", ""])
+        self.assertEqual(counts["photo_not_read"], 2)
 
     def test_opt_in_required(self):
         names, _, _ = self.names(config(required=True))
@@ -102,7 +116,7 @@ class Refresh(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp()) / "data.json"
 
     def run_refresh(self, **kw):
-        return directory.refresh(self.tmp, config(), list_members=lambda: ["ana", "ben.k", "cy", "dee"], read=read, **kw)
+        return directory.refresh(self.tmp, config(), list_members=lambda: members("ana", "ben.k", "cy", "dee"), read=read, **kw)
 
     def test_writes_then_no_change(self):
         changed, msg = self.run_refresh()
@@ -112,21 +126,19 @@ class Refresh(unittest.TestCase):
         self.assertFalse(changed)
         self.assertIn("No change", msg)
 
-    def test_keeps_last_copy_when_directory_fails(self):
+    def test_keeps_last_copy_when_members_list_fails(self):
         self.run_refresh()
         def broken():
-            raise RuntimeError("member directory answered 503")
+            raise RuntimeError("members list answered 503")
         changed, msg = directory.refresh(self.tmp, config(), list_members=broken, read=read)
         self.assertFalse(changed)
         self.assertIn("Kept the last good copy", msg)
 
-    def test_keeps_last_copy_when_profiles_do_not_answer(self):
+    def test_keeps_last_copy_when_cards_drop_by_half(self):
         self.run_refresh()
-        down = lambda names: ((n, commons.UNAVAILABLE, None) for n in names)
-        changed, msg = directory.refresh(self.tmp, config(), list_members=lambda: ["ana", "ben.k"], read=down)
+        changed, msg = directory.refresh(self.tmp, config(), list_members=lambda: members("cy", "dee"), read=read)
         self.assertFalse(changed)
         self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 2)
-
 
     def test_empty_cache_first_run_writes_cards(self):
         # The workflow keeps the last good copy in the Actions cache; on a first run there is none.
@@ -137,7 +149,7 @@ class Refresh(unittest.TestCase):
 
     def test_empty_cache_and_commons_down_writes_nothing(self):
         def broken():
-            raise RuntimeError("member directory answered 503")
+            raise RuntimeError("members list answered 503")
         changed, _ = directory.refresh(self.tmp, config(), list_members=broken, read=read)
         self.assertFalse(changed)
         self.assertFalse(self.tmp.exists())
@@ -153,7 +165,7 @@ class Page(unittest.TestCase):
         self.assertNotIn(build.MARK, (out / "index.html").read_text())
 
     def test_build_puts_cards_in_the_page(self):
-        cards, counts = directory.collect(["ana", "ben.k"], config(), read)
+        cards, counts = directory.collect(members("ana", "ben.k"), config(), read)
         out = Path(tempfile.mkdtemp())
         payload = build.build(out, config(), {"updated": "2026-11-16T00:00:00Z", "counts": counts, "people": cards})
         html = (out / "index.html").read_text()
