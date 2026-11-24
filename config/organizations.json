@@ -1,12 +1,21 @@
 {
-  "_help": "Organizations open to collaboration, shown as cards on Find Collaborators next to people. Organizations ask to be added through https://stemedplus.org/contact-us/. Required: name, summary, contact. lead: the lead person's name, shown under the name (the page asks organizations for it). logo: a file in site/ or an https address; leave it out to show initials. interests: short tags people can search and click.",
+  "_help": "Organizations open to collaboration, shown as cards on Find Collaborators next to people. Organizations ask to be added through https://stemedplus.org/contact-us/. Required: name, summary, contact. lead: the lead person's name, shown under the name (the page asks organizations for it). logo: a file in site/ or an https address; leave it out to show initials. interests: short tags people can search and click; tags that start with \"Offer:\" or \"Need:\" show under \"We can offer\" and \"We're looking for\" and put the organization in the Offering and Looking for views (an organization with looking_for is in Looking for too).",
   "organizations": [
     {
       "name": "STEMEd+ Commons",
       "logo": "stemedplus-commons-logo.png",
       "summary": "Open to collaborations that strengthen the digital presence, infrastructure, and connectivity of STEM+ education communities.",
       "looking_for": "Societies, centers, networks, and research projects to partner on hosting groups and sites, open repositories and DOIs, and shared tools.",
-      "interests": ["digital infrastructure", "open scholarship", "community building", "open repositories", "STEM+ education research"],
+      "interests": [
+        "digital infrastructure",
+        "open scholarship",
+        "community building",
+        "open repositories",
+        "STEM+ education research",
+        "Offer: hosting for groups and sites",
+        "Offer: open repository with DOIs",
+        "Offer: shared tools"
+      ],
       "website": "https://stemedplus.org/",
       "contact": "https://stemedplus.org/contact-us/"
     }

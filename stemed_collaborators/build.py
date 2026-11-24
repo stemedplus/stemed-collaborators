@@ -40,9 +40,10 @@ def load_organizations(path: Path = ROOT / "config" / "organizations.json") -> l
         logo = str(o.get("logo", "")).strip()
         if logo and not logo.startswith("https://") and not (ROOT / "site" / logo).exists():
             raise SystemExit(f"config/organizations.json, {o['name']}: logo {logo} is not in site/")
+        tags, offers, needs = directory.split_interests([str(x).strip() for x in o.get("interests", []) if str(x).strip()])
         out.append({"name": o["name"].strip(), "lead": str(o.get("lead", "")).strip(), "summary": o["summary"].strip(),
                     "looking_for": str(o.get("looking_for", "")).strip(), "logo": logo,
-                    "interests": [str(x).strip() for x in o.get("interests", []) if str(x).strip()],
+                    "interests": tags, "offers": offers, "needs": needs,
                     "website": str(o.get("website", "")).strip(), "contact": o["contact"].strip()})
     return out
 

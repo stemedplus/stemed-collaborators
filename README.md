@@ -21,6 +21,7 @@ updates itself every day.
    only those people. A few spellings count ("Offering:", "Can offer:", "Seeking:", "Looking for:", any
    capitals, or a spaced dash in place of the colon); ordinary interests such as "Needs assessment" are left
    alone. The page's "Help people find you" box asks people to add them.
+   Links on cards (profile, ORCID, contact, website) open in a new tab, so the list and any search stay put.
 5. **Search.** The page searches interests, skills, names, and institutions. Clicking an interest shows
    everyone else with it, and the most common interests are listed as one-click searches.
 6. **Adding interests.** The page invites people to sign in, open **Edit profile**, and add academic
@@ -36,7 +37,7 @@ Organizations open to collaboration get their own cards, shown first and marked 
 what they are looking for, searchable interest tags, a "Contact to collaborate" link, and their website.
 Organizations ask to be added through the [STEMEd+ contact page](https://stemedplus.org/contact-us/), which the
 page links to; choosing **Organizations** on the page shows an "Add your organization" button with the list of what to send. A maintainer then adds an entry. Required: `name`, `summary`, `contact` (https); `lead` is shown when given. A `logo` is a
-file in `site/` or an https address. The page has an Everyone / People / Organizations switch.
+file in `site/` or an https address. Interests that start with `Offer:` or `Need:` show under "We can offer" and "We're looking for" and put the organization in the Offering and Looking for views; an organization with `looking_for` is in Looking for too. The page has an Everyone / People / Organizations switch.
 
 ## Who is listed (config/site.json)
 

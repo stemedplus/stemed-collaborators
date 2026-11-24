@@ -233,3 +233,17 @@ class OfferAndNeed(unittest.TestCase):
         self.assertEqual((cards[0]["interests"], cards[0]["offers"], cards[0]["needs"]),
                          ([], ["qualitative coding"], ["K-12 partner schools"]))
         self.assertEqual((counts["no_interests"], counts["offering"], counts["looking"]), (0, 1, 1))
+
+
+class OrganizationOffers(unittest.TestCase):
+    def test_offer_and_need_tags_are_split_for_organizations(self):
+        path = Path(tempfile.mkdtemp()) / "orgs.json"
+        path.write_text(json.dumps({"organizations": [{"name": "X", "summary": "s", "contact": "https://x.org/",
+            "interests": ["open science", "Offer: field sites", "Need: evaluator"]}]}))
+        o = build.load_organizations(path)[0]
+        self.assertEqual((o["interests"], o["offers"], o["needs"]), (["open science"], ["field sites"], ["evaluator"]))
+
+    def test_stemedplus_card_offers(self):
+        o = build.load_organizations()[0]
+        self.assertIn("open repository with DOIs", o["offers"])
+        self.assertNotIn("Offer: shared tools", o["interests"])

@@ -133,7 +133,7 @@
         <li>Lead's name</li>
         <li>A sentence on what you're open to</li>
         <li>A contact link (a contact page or form)</li>
-        <li class="opt">Optional: what you're looking for, a few topic tags, a website, and a logo</li>
+        <li class="opt">Optional: what you can offer, what you're looking for, a few topic tags, a website, and a logo</li>
       </ul>
     </div>
     <a class="btn rust" id="orgs-add-link" href="https://stemedplus.org/contact-us/" target="_blank" rel="noopener noreferrer">Add your organization<span class="vh"> (opens in a new tab)</span></a>
@@ -162,6 +162,7 @@ var DATA = /*__DATA__*/null;
   var people = D.people || [];
   var orgs = (D.organizations || []).map(function (o) {
     return { kind: 'org', name: o.name, lead: o.lead || '', username: '', institution: '', interests: o.interests || [], summary: o.summary,
+             offers: o.offers || [], needs: o.needs || [],
              looking_for: o.looking_for, logo: o.logo, website: o.website, contact: o.contact };
   });
   var show = 'all';
@@ -182,7 +183,8 @@ var DATA = /*__DATA__*/null;
   orgs.forEach(function (p) {
     p._name = norm(p.name + ' ' + p.lead);
     p._inst = norm(p.summary + ' ' + (p.looking_for || ''));
-    p._ints = p.interests.map(norm);
+    p._ints = p.interests.concat(p.offers, p.needs).map(norm);
+    p._any = true;
   });
   people.forEach(function (p) {
     p._name = norm(p.name + ' ' + p.username);
@@ -233,9 +235,10 @@ var DATA = /*__DATA__*/null;
       tags.appendChild(b);
     });
     if (p.interests.length) c.appendChild(tags);
+    addSections(c, p, words);
     var acts = el('div', { 'class': 'acts' });
-    acts.appendChild(el('a', { href: p.contact }, 'Contact to collaborate →'));
-    if (p.website) acts.appendChild(el('a', { href: p.website }, 'Website'));
+    acts.appendChild(ext(p.contact, 'Contact to collaborate →'));
+    if (p.website) acts.appendChild(ext(p.website, 'Website'));
     c.appendChild(acts);
     return c;
   }
@@ -263,29 +266,15 @@ var DATA = /*__DATA__*/null;
       tags.appendChild(m);
     }
     if (order.length) c.appendChild(tags);
-    [['offers', 'offer', 'I can offer'], ['needs', 'need', "I'm looking for"]].forEach(function (s) {
-      var items = p[s[0]];
-      if (!items.length) return;
-      var box = el('div', { 'class': 'sect' });
-      box.appendChild(el('p', { 'class': 'sect-h' + (s[1] === 'need' ? ' need' : '') }, s[2]));
-      var row = el('div', { 'class': 'tags' });
-      items.forEach(function (i) {
-        var n = norm(i), hit = words.length && words.every(function (w) { return n.indexOf(w) > -1; });
-        var b = el('button', { 'class': 'tag ' + s[1] + (hit ? ' hit' : ''), type: 'button', title: 'Find everyone who mentions ' + i }, i);
-        b.addEventListener('click', function () { setQuery(i); });
-        row.appendChild(b);
-      });
-      box.appendChild(row);
-      c.appendChild(box);
-    });
+    addSections(c, p, words);
     if (!p._any) {
       var ni = el('p', { 'class': 'noints' }, 'No interests on this profile yet. Is this you? ');
-      ni.appendChild(el('a', { href: D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/' }, 'Add your interests →'));
+      ni.appendChild(ext(D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/', 'Add your interests →'));
       c.appendChild(ni);
     }
     var acts = el('div', { 'class': 'acts' });
-    acts.appendChild(el('a', { href: p.profile }, 'View profile and contact →'));
-    if (p.orcid) acts.appendChild(el('a', { href: 'https://orcid.org/' + p.orcid }, 'ORCID'));
+    acts.appendChild(ext(p.profile, 'View profile and contact →'));
+    if (p.orcid) acts.appendChild(ext('https://orcid.org/' + p.orcid, 'ORCID'));
     c.appendChild(acts);
     return c;
   }
@@ -301,8 +290,33 @@ var DATA = /*__DATA__*/null;
     var eg = el('p', { 'class': 'noints' }, 'On the profile, these are the interests "Offer: qualitative coding", "Offer: classroom observation", "Need: K-12 partner schools" and "Need: psychometrics help".');
     c.querySelector('.acts').before(eg);
     var acts = c.querySelector('.acts'); acts.innerHTML = '';
-    acts.appendChild(el('a', { href: D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/', target: '_blank', rel: 'noopener noreferrer' }, 'Add yours on your profile →'));
+    acts.appendChild(ext(D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/', 'Add yours on your profile →'));
     return c;
+  }
+  // "I can offer" / "I'm looking for" (people) or "We can offer" / "We're looking for" (organizations).
+  function addSections(c, p, words) {
+    var org = p.kind === 'org';
+    [['offers', 'offer', org ? 'We can offer' : 'I can offer'], ['needs', 'need', org ? "We're looking for" : "I'm looking for"]].forEach(function (s) {
+      var items = p[s[0]];
+      if (!items.length) return;
+      var box = el('div', { 'class': 'sect' });
+      box.appendChild(el('p', { 'class': 'sect-h' + (s[1] === 'need' ? ' need' : '') }, s[2]));
+      var row = el('div', { 'class': 'tags' });
+      items.forEach(function (i) {
+        var n = norm(i), hit = words.length && words.every(function (w) { return n.indexOf(w) > -1; });
+        var b = el('button', { 'class': 'tag ' + s[1] + (hit ? ' hit' : ''), type: 'button', title: 'Find everyone who mentions ' + i }, i);
+        b.addEventListener('click', function () { setQuery(i); });
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+      c.appendChild(box);
+    });
+  }
+  // Links on cards open in a new tab, so the list (and any search) stays put.
+  function ext(href, text) {
+    var a = el('a', { href: href, target: '_blank', rel: 'noopener noreferrer' }, text);
+    a.appendChild(el('span', { 'class': 'vh' }, ' (opens in a new tab)'));
+    return a;
   }
   function initials(p) {
     var parts = p.name.split(/\s+/).filter(Boolean);
@@ -314,8 +328,9 @@ var DATA = /*__DATA__*/null;
     $('clear').hidden = !raw;
     $('orgs-add').hidden = show !== 'orgs';
     $('offer-tip').hidden = show !== 'offer' && show !== 'need';
-    var pool = show === 'offer' ? people.filter(function (p) { return p.offers.length; })
-             : show === 'need' ? people.filter(function (p) { return p.needs.length; })
+    // Offering and Looking for include organizations; an organization's "Looking for" sentence counts as looking.
+    var pool = show === 'offer' ? orgs.concat(people).filter(function (p) { return p.offers.length; })
+             : show === 'need' ? orgs.concat(people).filter(function (p) { return p.needs.length || (p.kind === 'org' && p.looking_for); })
              : (show === 'people' ? [] : orgs).concat(show === 'orgs' ? [] : people);
     var list = pool.map(function (p) { return { p: p, s: score(p, words, phrase) }; }).filter(function (x) { return x.s > 0; });
     // Organizations first, then people; with a search, best matches first within each. People who have added
@@ -341,8 +356,9 @@ var DATA = /*__DATA__*/null;
       var no = list.filter(function (x) { return x.p.kind === 'org'; }).length, np = list.length - no, parts = [];
       if (np) parts.push(np + (np === 1 ? ' person' : ' people'));
       if (no) parts.push(no + (no === 1 ? ' organization' : ' organizations'));
+      if ((show === 'offer' || show === 'need') && !words.length && !np) grid.appendChild(exampleCard());
       count.appendChild(el('strong', null, parts.join(' and ')));
-      count.appendChild(document.createTextNode(words.length ? ' matching "' + raw + '"' : show === 'offer' ? ' offering expertise' : show === 'need' ? ' looking for expertise' : ' open to collaboration'));
+      count.appendChild(document.createTextNode(words.length ? ' matching "' + raw + '"' : show === 'offer' ? ' offering expertise or help' : show === 'need' ? ' looking for expertise or partners' : ' open to collaboration'));
     }
   }
   var timer;
