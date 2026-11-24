@@ -60,6 +60,8 @@
   .orgs-cta { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #e3eae3; font-size: 14px; }
   .invite .for { margin: -4px 0 10px; font-size: 14px; color: var(--muted); }
   .invite .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .orgs-add { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 16px 0 0; padding: 14px 18px; border: 2px solid var(--green); border-radius: 16px; background: #f7fbf7; }
+  .orgs-add p { margin: 0; font-size: 15px; line-height: 1.5; }
   .noints { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); background: var(--pale); border-radius: 10px; padding: 10px 12px; }
   .noints a { font-weight: 800; }
   .empty { border: 2px dashed #9cc09c; border-radius: 16px; padding: 24px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
@@ -105,6 +107,10 @@
     <button type="button" data-show="all" aria-pressed="true">Everyone</button>
     <button type="button" data-show="people" aria-pressed="false">People</button>
     <button type="button" data-show="orgs" aria-pressed="false">Organizations</button>
+  </div>
+  <div class="orgs-add" id="orgs-add" hidden>
+    <p><strong>Is your organization open to collaboration?</strong> Societies, centers, networks, museums, and projects can have a card here.</p>
+    <a class="btn rust" id="orgs-add-link" href="https://stemedplus.org/contact-us/">Add your organization</a>
   </div>
   <div class="popular" id="popular" aria-label="Popular interests"></div>
   <p class="count" id="count" aria-live="polite"></p>
@@ -243,6 +249,7 @@ var DATA = /*__DATA__*/null;
   function render() {
     var raw = q.value.trim(), phrase = norm(raw), words = phrase ? phrase.split(' ') : [];
     $('clear').hidden = !raw;
+    $('orgs-add').hidden = show !== 'orgs';
     var pool = (show === 'people' ? [] : orgs).concat(show === 'orgs' ? [] : people);
     var list = pool.map(function (p) { return { p: p, s: score(p, words, phrase) }; }).filter(function (x) { return x.s > 0; });
     // Organizations first, then people; with a search, best matches first within each. People who have added
@@ -280,7 +287,7 @@ var DATA = /*__DATA__*/null;
       render();
     });
   });
-  if (D.contact_url) $('org-contact').href = D.contact_url;
+  if (D.contact_url) { $('org-contact').href = D.contact_url; $('orgs-add-link').href = D.contact_url; }
   var m = location.hash.match(/^#q=(.*)$/); if (m) q.value = decodeURIComponent(m[1]);
   render();
   var c = D.counts || {};
