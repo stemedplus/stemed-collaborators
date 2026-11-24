@@ -60,6 +60,8 @@
   .orgs-cta { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid #e3eae3; font-size: 14px; }
   .invite .for { margin: -4px 0 10px; font-size: 14px; color: var(--muted); }
   .invite .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .noints { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); background: var(--pale); border-radius: 10px; padding: 10px 12px; }
+  .noints a { font-weight: 800; }
   .empty { border: 2px dashed #9cc09c; border-radius: 16px; padding: 24px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
   .note { font-size: 13px; color: var(--muted); padding-bottom: 32px; }
   a:focus-visible, button:focus-visible { outline: 3px solid var(--rust); outline-offset: 2px; }
@@ -77,15 +79,15 @@
       <p class="lead">Search STEMEd+ Commons members by the topics, methods, and skills on their profiles: researchers, K-12 teachers, college instructors, and informal educators. Then visit their profile to get in touch.</p>
     </div>
     <aside class="invite" aria-labelledby="add-h">
-      <h2 id="add-h">Not listed yet? Add yourself</h2>
-      <p class="for">For individuals. Your card comes from your STEMEd+ Commons profile.</p>
+      <h2 id="add-h">Help people find you</h2>
+      <p class="for">For individuals. Every STEMEd+ member has a card, made from their STEMEd+ Commons profile. Your interests are what people search for.</p>
       <ol>
         <li><strong>New to STEMEd+?</strong> <a id="join-link" href="https://stemedplus.org/join-stemed/">Join STEMEd+</a> first. Sign in through your institution, ORCID, or another provider.</li>
         <li>Sign in and open your profile. Choose <strong>Edit profile</strong>.</li>
         <li>Add <strong>Academic interests</strong>: your topics, plus skills and methods.<br><span class="eg">For example: "science identity", "qualitative interviews", "psychometrics", "teacher professional learning".</span></li>
         <li>Add a way to reach you, such as your website, email, or Mastodon, so people who find you can get in touch.</li>
         <li class="optin-step" hidden>Add the interest <strong class="optin-name"></strong> so you're listed here.</li>
-        <li>Save. Your card appears here within a day.</li>
+        <li>Save. Your interests appear on your card within a day.</li>
       </ol>
       <div class="btns"><a class="btn rust" id="edit-link" href="#">Add interests to my profile</a><a class="btn line" href="https://stemedplus.org/join-stemed/">Join STEMEd+</a></div>
       <p class="orgs-cta"><strong>For organizations:</strong> open to collaboration? <a id="org-contact" href="https://stemedplus.org/contact-us/">Contact us to add an organization card →</a></p>
@@ -221,7 +223,12 @@ var DATA = /*__DATA__*/null;
       m.addEventListener('click', function () { tags.querySelectorAll('.tag[hidden]').forEach(function (b) { b.hidden = false; }); m.remove(); });
       tags.appendChild(m);
     }
-    c.appendChild(tags);
+    if (order.length) c.appendChild(tags);
+    else {
+      var ni = el('p', { 'class': 'noints' }, 'No interests on this profile yet. Is this you? ');
+      ni.appendChild(el('a', { href: D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/' }, 'Add your interests →'));
+      c.appendChild(ni);
+    }
     var acts = el('div', { 'class': 'acts' });
     acts.appendChild(el('a', { href: p.profile }, 'View profile and contact →'));
     if (p.orcid) acts.appendChild(el('a', { href: 'https://orcid.org/' + p.orcid }, 'ORCID'));
@@ -238,8 +245,9 @@ var DATA = /*__DATA__*/null;
     $('clear').hidden = !raw;
     var pool = (show === 'people' ? [] : orgs).concat(show === 'orgs' ? [] : people);
     var list = pool.map(function (p) { return { p: p, s: score(p, words, phrase) }; }).filter(function (x) { return x.s > 0; });
-    // Organizations first, then people; with a search, best matches first within each.
-    list.sort(function (a, b) { return ((b.p.kind === 'org') - (a.p.kind === 'org')) || (words.length ? b.s - a.s : 0) || a.p.name.localeCompare(b.p.name); });
+    // Organizations first, then people; with a search, best matches first within each. People who have added
+    // interests come before people who haven't yet.
+    list.sort(function (a, b) { return ((b.p.kind === 'org') - (a.p.kind === 'org')) || (words.length ? b.s - a.s : 0) || ((b.p.interests.length > 0) - (a.p.interests.length > 0)) || a.p.name.localeCompare(b.p.name); });
     grid.innerHTML = '';
     var frag = document.createDocumentFragment();
     list.forEach(function (x) { frag.appendChild(card(x.p, phrase, words)); });

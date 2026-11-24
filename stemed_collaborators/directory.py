@@ -3,8 +3,8 @@
     python -m stemed_collaborators --refresh      read Commons and update data/collaborators.json (not in Git)
 
 Who gets a card (config/site.json, "listing"):
-  * The member is in the STEMEd+ members list of the Profiles API (which decides membership) and their profile has at
-    least one academic interest besides the opt-in interest.
+  * The member is in the STEMEd+ members list of the Profiles API (which decides membership). Everyone gets a card,
+    with or without academic interests; a card without interests invites the member to add some.
   * When "opt_in_required" is true, their academic interests must also include the opt-in interest
     (for example "open to collaboration"). While it is false (the default), everyone with interests counts as
     opted in, and the page says so.
@@ -50,7 +50,7 @@ def same(a: str, b: str) -> bool:
 
 
 def why_not(username: str, data: dict, config: dict) -> Optional[str]:
-    """Why a profile gets no card ("excluded", "no_interests", "not_opted_in"), or None.
+    """Why a profile gets no card ("excluded", "not_opted_in"), or None.
 
     Membership comes from the STEMEd+ members list itself. The profile's own "memberships" flags are not used:
     they disagree with each other ("STEMED+" and "STEMEd+") and with the list."""
@@ -58,8 +58,6 @@ def why_not(username: str, data: dict, config: dict) -> Optional[str]:
     if username.lower() in exclude:
         return "excluded"
     all_interests = commons.interests(data)
-    if not [i for i in all_interests if not same(i, opt_in)]:
-        return "no_interests"
     if required and not any(same(i, opt_in) for i in all_interests):
         return "not_opted_in"
     return None
@@ -113,6 +111,7 @@ def collect(members: Iterable[dict], config: dict, read: Callable = commons.iter
             unanswered += 1
             record["avatar"] = old_photos.get(username.lower(), "")
         cards.append(to_card(username, record, config))
+    counts["no_interests"] = sum(1 for c in cards if not c["interests"])
     if unanswered:
         counts["photo_not_read"] = unanswered
     cards.sort(key=lambda c: (c["name"].lower(), c["username"]))
@@ -148,8 +147,8 @@ def refresh(path: Path = DATA, config: Optional[dict] = None, list_members: Call
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(new, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     skipped = ", ".join(f"{k.replace('_', ' ')}: {v}" for k, v in counts.items()
-                        if k in ("no_interests", "not_opted_in", "excluded"))
+                        if k in ("not_opted_in", "excluded"))
     note = (f" {counts['photo_not_read']} profiles didn't answer, so their photos are from the last copy."
             if counts.get("photo_not_read") else "")
-    return True, (f"Updated: {counts['listed']} of {counts['members']} members listed "
-                  f"(not listed, {skipped or 'none'}).{note}")
+    return True, (f"Updated: {counts['listed']} of {counts['members']} members listed, "
+                  f"{counts.get('no_interests', 0)} of them without interests yet (not listed: {skipped or 'none'}).{note}")

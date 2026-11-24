@@ -11,13 +11,14 @@ updates itself every day.
 1. **Who's a member.** Every day, GitHub reads the STEMEd+ Commons
    [Profiles API members list](https://stemedplus.profile.hcommons.org/api/v1/members/), which gives every
    member's public name, institution, ORCID iD, and **academic interests**. Nothing is scraped from web pages.
-2. **Photos.** The list has no photos, so for members who get a card it also reads their one-member API
-   record (`/api/v1/members/<username>/`) for the photo.
-3. **Who gets a card.** Members with at least one academic interest.
+2. **Photos.** The list has no photos, so it also reads each member's one-member API record
+   (`/api/v1/members/<username>/`) for the photo.
+3. **Who gets a card.** Every STEMEd+ member. Cards are sorted with people who have added academic interests
+   first; a card without interests shows "Is this you? Add your interests", linking to **Edit profile**.
 4. **Search.** The page searches interests, skills, names, and institutions. Clicking an interest shows
    everyone else with it, and the most common interests are listed as one-click searches.
-5. **Getting listed.** The page invites people to sign in, open **Edit profile**, and add academic
-   interests, including their skills and methods. Their card appears at the next daily update.
+5. **Adding interests.** The page invites people to sign in, open **Edit profile**, and add academic
+   interests, including their skills and methods. They appear on their card at the next daily update.
 6. **Contact.** Each card links to the person's profile, where they list the ways to reach them. (Knowledge
    Commons no longer has direct messages.)
 
@@ -33,9 +34,9 @@ file in `site/` or an https address. The page has an Everyone / People / Organiz
 
 ## Who is listed (config/site.json)
 
-Everyone in the STEMEd+ members list with academic interests on their profile gets a card. Cards show
+Everyone in the STEMEd+ members list gets a card, with or without academic interests. Cards show
 only public profile fields; people get in touch through the contact links on each profile. To come off the page, a
-member removes their academic interests, or a maintainer adds their username to `listing.exclude`.
+member asks and a maintainer adds their username to `listing.exclude`.
 
 `listing.opt_in_required` (default `false`) can list only members whose interests include
 `listing.opt_in_interest` ("open to collaboration"); the page then asks people to add it.

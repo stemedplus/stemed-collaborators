@@ -84,10 +84,13 @@ class Cards(unittest.TestCase):
         cards, counts = directory.collect(members("ana", "ben.k", "cy", "dee"), cfg, read)
         return [c["username"] for c in cards], cards, counts
 
-    def test_preview_lists_everyone_with_interests(self):
+    def test_everyone_gets_a_card_with_or_without_interests(self):
         names, cards, counts = self.names(config())
-        self.assertEqual(names, ["ana", "ben.k"])          # cy has none; dee has only the opt-in interest
-        self.assertEqual((counts["members"], counts["listed"], counts["no_interests"]), (4, 2, 2))
+        self.assertEqual(names, ["ana", "ben.k", "cy", "dee"])
+        self.assertEqual((counts["members"], counts["listed"], counts["no_interests"]), (4, 4, 2))
+        by = {c["username"]: c for c in cards}
+        self.assertEqual(by["cy"]["interests"], [])
+        self.assertEqual(by["dee"]["interests"], [])       # only the opt-in interest, which is hidden
         ana = cards[0]
         self.assertEqual(ana["interests"], ["Science identity", "qualitative interviews"])   # opt-in tag hidden
         self.assertEqual(ana["name"], "Ana Ruiz")
@@ -104,11 +107,11 @@ class Cards(unittest.TestCase):
 
     def test_opt_in_required(self):
         names, _, _ = self.names(config(required=True))
-        self.assertEqual(names, ["ana"])
+        self.assertEqual(names, ["ana", "dee"])
 
     def test_exclude(self):
         names, _, _ = self.names(config(exclude=["ANA"]))
-        self.assertEqual(names, ["ben.k"])
+        self.assertEqual(names, ["ben.k", "cy", "dee"])
 
 
 class Refresh(unittest.TestCase):
@@ -121,7 +124,7 @@ class Refresh(unittest.TestCase):
     def test_writes_then_no_change(self):
         changed, msg = self.run_refresh()
         self.assertTrue(changed, msg)
-        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 2)
+        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 4)
         changed, msg = self.run_refresh()
         self.assertFalse(changed)
         self.assertIn("No change", msg)
@@ -136,16 +139,16 @@ class Refresh(unittest.TestCase):
 
     def test_keeps_last_copy_when_cards_drop_by_half(self):
         self.run_refresh()
-        changed, msg = directory.refresh(self.tmp, config(), list_members=lambda: members("cy", "dee"), read=read)
+        changed, msg = directory.refresh(self.tmp, config(), list_members=lambda: members("cy"), read=read)
         self.assertFalse(changed)
-        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 2)
+        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 4)
 
     def test_empty_cache_first_run_writes_cards(self):
         # The workflow keeps the last good copy in the Actions cache; on a first run there is none.
         self.assertFalse(self.tmp.exists())
         changed, msg = self.run_refresh()
         self.assertTrue(changed, msg)
-        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 2)
+        self.assertEqual(len(json.loads(self.tmp.read_text())["people"]), 4)
 
     def test_empty_cache_and_commons_down_writes_nothing(self):
         def broken():
@@ -172,6 +175,7 @@ class Page(unittest.TestCase):
         self.assertNotIn(build.MARK, html)
         self.assertIn('"preview":true', html)
         self.assertIn("Science identity", html)
+        self.assertIn("Add your interests", html)
         self.assertTrue(payload["preview"])
         self.assertTrue((out / "stemedplus-theme.css").exists())
 
