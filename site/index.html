@@ -65,6 +65,7 @@
   .orgs-add p { margin: 0; font-size: 15px; line-height: 1.5; }
   .orgs-add ul { margin: 6px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.55; color: var(--text); }
   .orgs-add .opt { color: var(--muted); }
+  .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .lead { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
   .noints { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); background: var(--pale); border-radius: 10px; padding: 10px 12px; }
   .noints a { font-weight: 800; }
@@ -123,7 +124,7 @@
         <li class="opt">Optional: what you're looking for, a few topic tags, a website, and a logo</li>
       </ul>
     </div>
-    <a class="btn rust" id="orgs-add-link" href="https://stemedplus.org/contact-us/">Add your organization</a>
+    <a class="btn rust" id="orgs-add-link" href="https://stemedplus.org/contact-us/" target="_blank" rel="noopener noreferrer">Add your organization<span class="vh"> (opens in a new tab)</span></a>
   </div>
   <div class="popular" id="popular" aria-label="Popular interests"></div>
   <p class="count" id="count" aria-live="polite"></p>
