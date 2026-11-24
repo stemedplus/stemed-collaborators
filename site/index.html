@@ -74,6 +74,8 @@
   .tag.offer { background: #ffffff; border: 1.5px solid var(--green); color: var(--green); }
   .tag.need { background: #ffffff; border: 1.5px dashed #c98a72; color: #7a3216; }
   .tag.need:hover, .tag.need.hit { background: #7a3216; border-color: #7a3216; color: #ffffff; }
+  .card.example { border: 2px dashed #9cc09c; }
+  .kind.ex { background: var(--rust); }
   .noints { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); background: var(--pale); border-radius: 10px; padding: 10px 12px; }
   .noints a { font-weight: 800; }
   .empty { border: 2px dashed #9cc09c; border-radius: 16px; padding: 24px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
@@ -287,6 +289,21 @@ var DATA = /*__DATA__*/null;
     c.appendChild(acts);
     return c;
   }
+  // A sample card for the Offering and Looking for views while no one has added Offer: or Need: interests.
+  function exampleCard() {
+    var p = { name: 'Alex Example', institution: 'Your institution', photo: '', orcid: '', profile: '#',
+              interests: ['Science identity', 'Teacher education'],
+              offers: ['qualitative coding', 'classroom observation'], needs: ['K-12 partner schools', 'psychometrics help'] };
+    p._ints = p.interests.concat(p.offers, p.needs).map(norm); p._any = true;
+    var c = card(p, '', []);
+    c.classList.add('example');
+    c.querySelector('.who h3').before(el('span', { 'class': 'kind ex' }, 'Example'));
+    var eg = el('p', { 'class': 'noints' }, 'On the profile, these are the interests "Offer: qualitative coding", "Offer: classroom observation", "Need: K-12 partner schools" and "Need: psychometrics help".');
+    c.querySelector('.acts').before(eg);
+    var acts = c.querySelector('.acts'); acts.innerHTML = '';
+    acts.appendChild(el('a', { href: D.edit_profile || 'https://stemedplus.profile.hcommons.org/edit-profile/', target: '_blank', rel: 'noopener noreferrer' }, 'Add yours on your profile →'));
+    return c;
+  }
   function initials(p) {
     var parts = p.name.split(/\s+/).filter(Boolean);
     return el('span', { 'class': 'initials', 'aria-hidden': 'true' }, ((parts[0] || '?')[0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase());
@@ -310,9 +327,10 @@ var DATA = /*__DATA__*/null;
     grid.appendChild(frag);
     if (!pool.length) {
       count.textContent = '';
-      grid.appendChild(el('div', { 'class': 'empty' }, show === 'offer' ? 'No one has added an "Offer:" interest yet. Add one to your profile and be the first.'
-        : show === 'need' ? 'No one has added a "Need:" interest yet. Add one to your profile and be the first.'
+      grid.appendChild(el('div', { 'class': 'empty' }, show === 'offer' ? 'No one has added an "Offer:" interest yet. Here is what a card looks like with them. Add yours and be the first.'
+        : show === 'need' ? 'No one has added a "Need:" interest yet. Here is what a card looks like with them. Add yours and be the first.'
         : 'No one is listed yet. Add your interests to your STEMEd+ Commons profile to be the first.'));
+      if (show === 'offer' || show === 'need') grid.appendChild(exampleCard());
     } else if (!list.length) {
       count.textContent = '';
       var e = el('div', { 'class': 'empty' }); e.appendChild(document.createTextNode('No one matches "' + raw + '" yet. Try a broader word, or browse '));
