@@ -211,3 +211,25 @@ class OrganizationLead(unittest.TestCase):
             {"name": "Y", "summary": "s", "contact": "https://y.org/"}]}))
         orgs = build.load_organizations(path)
         self.assertEqual([o["lead"] for o in orgs], ["Pat Lee", ""])
+
+
+class OfferAndNeed(unittest.TestCase):
+    def test_prefixes_become_offers_and_needs(self):
+        plain, offers, needs = directory.split_interests([
+            "Science identity", "Offer: psychometrics", "offering - Rasch modeling", "Can offer: K-12 sites",
+            "Need: partner schools", "Looking for: co-PI", "SEEKING: evaluator"])
+        self.assertEqual(plain, ["Science identity"])
+        self.assertEqual(offers, ["psychometrics", "Rasch modeling", "K-12 sites"])
+        self.assertEqual(needs, ["partner schools", "co-PI", "evaluator"])
+
+    def test_ordinary_interests_are_left_alone(self):
+        items = ["Needs assessment", "Needs-based design", "Offer:", "Creative writing: poetry", "Offerings in music"]
+        self.assertEqual(directory.split_interests(items), (items, [], []))
+
+    def test_card_and_counts(self):
+        record = {"username": "zed", "name": "Zed", "academic_interests": [
+            {"id": 1, "text": "Offer: qualitative coding"}, {"id": 2, "text": "Need: K-12 partner schools"}]}
+        cards, counts = directory.collect([record], config(), lambda names: ((n, commons.UNAVAILABLE, None) for n in names))
+        self.assertEqual((cards[0]["interests"], cards[0]["offers"], cards[0]["needs"]),
+                         ([], ["qualitative coding"], ["K-12 partner schools"]))
+        self.assertEqual((counts["no_interests"], counts["offering"], counts["looking"]), (0, 1, 1))
