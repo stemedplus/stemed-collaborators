@@ -68,6 +68,18 @@ them after 7 days. They can be seen and deleted under **Actions → Caches**.
 If the cache is empty (the first run, or after the entries are deleted), the run starts from nothing and
 builds the cards from the API; the page still builds if Commons is down, just without people cards.
 
+## Data for other sites and tools
+
+Every build also publishes:
+
+* [`collaborators.json`](https://stemedplus.github.io/stemed-collaborators/collaborators.json): the same public card
+  data the page shows (people's name, username, institution, ORCID iD, photo, profile link, interests, offers and
+  needs; and every organization card).
+* [`feeds/organizations.xml`](https://stemedplus.github.io/stemed-collaborators/feeds/organizations.xml): an RSS feed
+  of organization cards, newest first by their `added` date in `config/organizations.json`.
+
+There is no feed of new people: the list shows members, it doesn't announce them.
+
 ## When Commons doesn't answer
 
 Knowledge Commons is still changing its profile system. The members list pages 20 at a time with a "next"

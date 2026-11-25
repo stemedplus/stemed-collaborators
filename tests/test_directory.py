@@ -247,3 +247,27 @@ class OrganizationOffers(unittest.TestCase):
         o = build.load_organizations()[0]
         self.assertIn("open repository with DOIs", o["offers"])
         self.assertNotIn("Offer: shared tools", o["interests"])
+
+
+class Feeds(unittest.TestCase):
+    def test_build_writes_json_and_rss(self):
+        import xml.etree.ElementTree as ET
+        out = Path(tempfile.mkdtemp())
+        cards, counts = directory.collect(members("ana", "ben.k"), config(), read)
+        build.build(out, config(), {"updated": "2026-11-25T10:00:00Z", "counts": counts, "people": cards})
+        data = json.loads((out / "collaborators.json").read_text())
+        self.assertEqual([p["username"] for p in data["people"]], ["ana", "ben.k"])
+        self.assertEqual(set(data["people"][0]), set(build.PEOPLE_FIELDS))
+        self.assertTrue(data["organizations"])
+        rss = ET.parse(out / "feeds" / "organizations.xml").getroot()
+        titles = [i.findtext("title") for i in rss.iter("item")]
+        self.assertIn("STEMEd+ Commons", titles)
+        self.assertIn("2026", rss.find("channel/item/pubDate").text)
+        page = (out / "index.html").read_text()
+        self.assertIn('href="feeds/organizations.xml"', page)
+
+    def test_added_must_be_a_date(self):
+        path = Path(tempfile.mkdtemp()) / "orgs.json"
+        path.write_text(json.dumps({"organizations": [{"name": "X", "summary": "s", "contact": "https://x.org/", "added": "soon"}]}))
+        with self.assertRaises(SystemExit):
+            build.load_organizations(path)

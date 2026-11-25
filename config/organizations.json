@@ -1,8 +1,9 @@
 {
-  "_help": "Organizations open to collaboration, shown as cards on Find Collaborators next to people. Organizations ask to be added through https://stemedplus.org/contact-us/. Required: name, summary, contact. lead: the lead person's name, shown under the name (the page asks organizations for it). logo: a file in site/ or an https address; leave it out to show initials. interests: short tags people can search and click; tags that start with \"Offer:\" or \"Need:\" show under \"We can offer\" and \"We're looking for\" and put the organization in the Offering and Looking for views (an organization with looking_for is in Looking for too).",
+  "_help": "Organizations open to collaboration, shown as cards on Find Collaborators next to people. Organizations ask to be added through https://stemedplus.org/contact-us/. Required: name, summary, contact. added: the date the card was added (YYYY-MM-DD), for the new-organizations feed. lead: the lead person's name, shown under the name (the page asks organizations for it). logo: a file in site/ or an https address; leave it out to show initials. interests: short tags people can search and click; tags that start with \"Offer:\" or \"Need:\" show under \"We can offer\" and \"We're looking for\" and put the organization in the Offering and Looking for views (an organization with looking_for is in Looking for too).",
   "organizations": [
     {
       "name": "STEMEd+ Commons",
+      "added": "2026-11-18",
       "logo": "stemedplus-commons-logo.png",
       "summary": "Open to collaborations that strengthen the digital presence, infrastructure, and connectivity of STEM+ education communities.",
       "looking_for": "Societies, centers, networks, and research projects to partner on hosting groups and sites, open repositories and DOIs, and shared tools.",
